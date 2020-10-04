@@ -341,3 +341,6 @@ healthchecksdb
 
 # Hidden projects
 _-*/
+
+# Bot sensetive data
+config.json
