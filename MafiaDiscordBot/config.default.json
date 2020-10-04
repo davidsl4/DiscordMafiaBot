@@ -1,0 +1,27 @@
+{
+  "key": "", // Your bot key you've got from the developer (if you don't have one - leave this empty),
+  "bot_token": "YOUR_BOT_TOKEN", // Bot token. You can get your bot token from https://discord.com/developers/applications
+  "default_prefix": "!mafia ", // Desired bot's default prefix. I suggest you to choose an unique one for your bot
+  "emote_guilds_ids": [ // A list of all the emotes guilds (to be excluded from interacting with)
+    // Fill your ids of guilds with emotes to be excluded from listing, separator character is comma (,)
+  ],
+  "developer_ids": [ // A list of the developers of the bot, those users will get a full control over the bot
+    // Enter here a list of discord user ids that will get a pretty much full access to the bot, separator character is comma (,)
+  ],
+  "translations": { // A list of translations (_ means default, add other languages to make them appear on the bot)
+    "_": {
+      "flag": ":flag_us:", // A flag for the language
+      "name": "English", // The name of the language
+      "file": "translations/en.json"
+    }
+  },
+  "database": {
+    "server": "", // Host name or ip of the database server
+    "user": "", // Database username
+    "password": "", // Database password
+    "db": "" // Database name,
+    "keys": { // We suggest you to not change here anything, this section is for advanced users only
+      
+    }
+  }
+}

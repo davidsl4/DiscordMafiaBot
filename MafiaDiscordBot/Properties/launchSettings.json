@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MafiaDiscordBot": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "settings file": "../../../config.json"
+      }
+    }
+  }
+}
