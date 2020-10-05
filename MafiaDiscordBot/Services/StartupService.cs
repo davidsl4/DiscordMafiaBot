@@ -8,6 +8,7 @@ using Discord;
 using Serilog;
 using System.IO;
 using System.Linq;
+using Serilog.Events;
 
 namespace MafiaDiscordBot.Services
 {
@@ -51,6 +52,22 @@ namespace MafiaDiscordBot.Services
             updateGameStatusTimer.Elapsed += UpdateGameStatus;
 
             // set discord connect and disconnect handlers
+            ((Action)(() =>
+            {
+                bool _loggedConnection = false;
+                _discord.Connected += () =>
+                {
+                    Log.Write(_loggedConnection ? LogEventLevel.Verbose : LogEventLevel.Debug,
+                        "Discord socket client connected to gateway");
+                    _loggedConnection = true;
+                    return Task.CompletedTask;
+                };
+                _discord.Disconnected += exception =>
+                {
+                    Log.Verbose("Discord socket client disconnected from gateway");
+                    return Task.CompletedTask;
+                };
+            }))();
             _discord.Connected += () => {
                 updateGameStatusTimer.Start();
                 return Task.CompletedTask;

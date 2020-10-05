@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace MafiaDiscordBot.Services
 {
@@ -33,6 +34,10 @@ namespace MafiaDiscordBot.Services
 
         public KeyStatus GetKeyStatus() => _botKeyStatus ??= GetKeyStatus(_config["key"]);
 
-        public KeyStatus GetKeyStatus(string key) => (KeyStatus)(IntPtr.Size == 8 /* 64bit */ ? CheckKey_64(key) : CheckKey_32(key));
+        public KeyStatus GetKeyStatus(string key)
+        {
+            Log.Verbose("Validating and getting status of key {key}", key);
+            return (KeyStatus)(IntPtr.Size == 8 /* 64bit */ ? CheckKey_64(key) : CheckKey_32(key));            
+        }
     }
 }

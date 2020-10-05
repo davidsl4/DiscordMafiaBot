@@ -189,6 +189,7 @@ namespace MafiaDiscordBot.Services
                     if (_guilds.TryGetValue(guildId, out Model.Guild cachedGuild))
                         return cachedGuild;
                     
+                    Log.Verbose("Looking for guild {id} in database", guildId);
                     cachedGuild = _service.ParseResult<Model.Guild>(await _service.GetExecuter(new Query(_tableName)
                             .Where(_service.GetSqlColumnName<Model.Guild>("id"), guildId))
                         .ExecuteReaderAsync().ConfigureAwait(false));
