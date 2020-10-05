@@ -1,12 +1,17 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace MafiaDiscordBot.Services
 {
@@ -16,9 +21,14 @@ namespace MafiaDiscordBot.Services
         private readonly CommandService _commands;
         private readonly IServiceProvider _services;
         private readonly IConfigurationRoot _configuration;
+        private readonly LocalizationService _localization;
+        private readonly DatabaseService _database;
+        private readonly Random _random;
+
+        private ConcurrentDictionary<ulong, string> _prefixesPerGuild;
         
         private ImmutableArray<Func<SocketMessage, Task>> _messageReceivedEventHandlers = ImmutableArray.Create< Func<SocketMessage, Task>>();
-        public event Func<SocketMessage, Task> MessageReceivedEventHandlers {
+        public event Func<SocketMessage, Task> MessageReceived {
             add => _messageReceivedEventHandlers = _messageReceivedEventHandlers.Add(value);
             remove => _messageReceivedEventHandlers = _messageReceivedEventHandlers.Remove(value);
         }
@@ -30,8 +40,13 @@ namespace MafiaDiscordBot.Services
             _services = services;
             _discord = services.GetRequiredService<DiscordSocketClient>();
             _configuration = services.GetRequiredService<IConfigurationRoot>();
+            _localization = services.GetRequiredService<LocalizationService>();
+            _database = services.GetRequiredService<DatabaseService>();
             
             _commands = new CommandService();
+            
+            _prefixesPerGuild = new ConcurrentDictionary<ulong, string>();
+            _random = new Random();
 
             _discord.MessageReceived += messageReceived;
         }
@@ -61,25 +76,138 @@ namespace MafiaDiscordBot.Services
         {
             if (arg is SocketUserMessage sum && !sum.Author.IsBot)
             {
-                int argPos = -1;
-                if (sum.HasStringPrefix(_configuration["default_prefix"], ref argPos) || sum.HasMentionPrefix(_discord.CurrentUser, ref argPos))
+                try
                 {
-                    try
+                    int argPos = -1;
+                    if (sum.HasStringPrefix(_configuration["default_prefix"], ref argPos) ||
+                        sum.HasMentionPrefix(_discord.CurrentUser, ref argPos))
                     {
                         var res = await HandleCommandAsync(sum, argPos);
                         if (!res.IsSuccess) argPos = -1;
                     }
-                    catch (Exception e)
+
+                    // The command not found if the argPos is -1
+                    if (argPos == -1 && _messageReceivedEventHandlers.Length != 0)
                     {
-                        
+                        foreach (var handler in _messageReceivedEventHandlers)
+                            await handler.Invoke(arg).ConfigureAwait(false);
                     }
                 }
-
-                // The command not found if the argPos is -1
-                if (argPos == -1 && _messageReceivedEventHandlers.Length != 0)
+                catch (Exception e)
                 {
-                    for (int i = 0; i < _messageReceivedEventHandlers.Length; i++)
-                        await _messageReceivedEventHandlers[i].Invoke(arg).ConfigureAwait(false);
+                    Log.Error(e,
+                        "Exception thrown when tried to process incoming message {message_id} that has been received on channel {channel_id}",
+                        arg.Id, arg.Channel.Id);
+                    if (!Directory.Exists("logs/message_exceptions"))
+                        Directory.CreateDirectory("logs/message_exceptions");
+                    
+                    var fileOutput = new StringBuilder();
+
+                    void AppendException(Exception exception, int level, bool isInner = false)
+                    {
+                        void AppendTabs()
+                        {
+                            for (int i = 0; i < level - 1; i++)
+                                fileOutput.Append("\t");
+                        }
+
+                        AppendTabs();
+                        fileOutput.AppendLine($"{(isInner ? "Inner exception" : "Exception")} details: {exception.GetType().FullName}");
+                        AppendTabs();
+                        fileOutput.AppendLine($"\tMessage: {exception.Message}");
+                        if (exception.InnerException != null)
+                            AppendException(exception.InnerException, level + 1, true);
+                    }
+                    
+                    AppendException(e, 1);
+                    fileOutput.AppendLine();
+                    fileOutput.AppendLine();
+                    fileOutput.AppendLine($"Message ID: {arg.Id}");
+                    fileOutput.AppendLine($"Message author: {arg.Author} ({arg.Author.Id})");
+                    fileOutput.AppendLine($"Message datetime: {arg.Timestamp:d/M/yyyy hh:mm:ss}");
+                    fileOutput.Append("Message channel: ");
+                    if (arg.Channel is ITextChannel messageTextChannel)
+                    {
+                        var guildCurrentUser =
+                            messageTextChannel.Guild == null
+                                ? null
+                                : await messageTextChannel.Guild.GetCurrentUserAsync().ConfigureAwait(false);
+
+                        fileOutput.AppendLine("Guild Text Channel");
+                        fileOutput.AppendLine($"\tChannel ID: {messageTextChannel.Id}");
+                        fileOutput.AppendLine("\tChannel Guild:");
+                        fileOutput.AppendLine($"\t\tID: {messageTextChannel.GuildId}");
+                        fileOutput.AppendLine($"\t\tName: {messageTextChannel.Guild?.Name ?? "Unknown"}");
+                        fileOutput.AppendLine(
+                            $"\t\tBot nickname: {(guildCurrentUser == null ? "Unknown" : guildCurrentUser.Nickname ?? "-")}");
+                        fileOutput.Append("\t\tAuthor nickname: ");
+                        if (arg.Author is IGuildUser authorGuildObject)
+                            fileOutput.AppendLine(authorGuildObject.Nickname ?? "-");
+                        if (messageTextChannel.Guild == null)
+                            fileOutput.AppendLine("Unknown");
+                        else
+                        {
+                            authorGuildObject = await messageTextChannel.Guild.GetUserAsync(arg.Author.Id)
+                                .ConfigureAwait(false);
+                            if (authorGuildObject == null)
+                                fileOutput.AppendLine("Unknown");
+                            else
+                                fileOutput.AppendLine(authorGuildObject.Nickname ?? "-");
+                        }
+
+                        fileOutput.AppendLine($"\tChannel name: {messageTextChannel.Name}");
+                        fileOutput.AppendLine(
+                            $"\tChannel permissions: {guildCurrentUser?.GetPermissions(messageTextChannel).RawValue.ToString() ?? "Unknown"}");
+                    }
+                    else fileOutput.AppendLine($"Text Channel {arg.Channel.Id}");
+
+                    fileOutput.AppendLine();
+                    fileOutput.AppendLine();
+                    fileOutput.AppendLine(string.IsNullOrWhiteSpace(arg.Content) ? "No message content" : arg.Content);
+                    
+                    await File.WriteAllTextAsync($"logs/message_exceptions/msg{arg.Id}.log", fileOutput.ToString()).ConfigureAwait(false);
+
+                    string discordMessageLocalization = null;
+                    if ((messageTextChannel = arg.Channel as ITextChannel) != null)
+                    {
+                        discordMessageLocalization = (await _database.Guilds.GetGuild(messageTextChannel.GuildId).ConfigureAwait(false))?.Localization;
+                        
+                        var guildCurrentUser =
+                            messageTextChannel.Guild == null
+                                ? null
+                                : await messageTextChannel.Guild.GetCurrentUserAsync().ConfigureAwait(false);
+
+                        if (guildCurrentUser?.GetPermissions(messageTextChannel).SendMessages ?? false)
+                        {
+                            if (!(guildCurrentUser?.GetPermissions(messageTextChannel).EmbedLinks ?? false))
+                                goto string_message;
+                        }
+                    }
+                    
+                    var (title, description) = _localization.GetLocalizedString(discordMessageLocalization, "MESSAGE_PROCESS_EXCEPTION_TITLE", "MESSAGE_PROCESS_EXCEPTION_DESCRIPTION");
+                        
+                    var builder = new EmbedBuilder()
+                        .WithDescription(description)
+                        .WithColor(new Color(uint.Parse(_configuration["color"])))
+                        .WithAuthor(author =>
+                        {
+                            author
+                                .WithName(title)
+                                .WithIconUrl(_discord.CurrentUser.GetAvatarUrl() ??
+                                             _discord.CurrentUser.GetDefaultAvatarUrl());
+                        });
+                    var embed = builder.Build();
+                    await arg.Channel.SendMessageAsync(
+                            null,
+                            embed: embed)
+                        .ConfigureAwait(false);
+                    goto skip_string_message;
+                        
+                    string_message:
+                    (title, description) = _localization.GetLocalizedString(discordMessageLocalization, "MESSAGE_PROCESS_EXCEPTION_TITLE", "MESSAGE_PROCESS_EXCEPTION_DESCRIPTION");
+                    await arg.Channel.SendMessageAsync($"**{title}**\n{description}").ConfigureAwait(false);
+                    
+                    skip_string_message: ;
                 }
             }
         }
