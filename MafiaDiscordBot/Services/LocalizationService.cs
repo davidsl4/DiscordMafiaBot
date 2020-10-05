@@ -70,12 +70,57 @@ namespace MafiaDiscordBot.Services
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
-        public string GetLocalizedString(string key) => _localizations.TryGetValue("_", out Language lang) ? lang.Translations[key]?.Value<string>() : null;
+        public string GetLocalizedString(string key) => _localizations.TryGetValue("_", out var lang) ? lang.Translations[key]?.Value<string>() : null;
         public string GetLocalizedString(string language, string key)
         {
-            if (_localizations.TryGetValue(language, out Language lang))
+            if (language != null && _localizations.TryGetValue(language, out var lang))
                 return lang.Translations[key]?.Value<string>() ?? GetLocalizedString(key);
             return GetLocalizedString(key);
         }
+        public string GetLocalizedString(Models.Database.Guild forGuild, string key) =>
+            GetLocalizedString(forGuild?.Localization, key);
+
+        public (string, string) GetLocalizedString(string language, string key1, string key2) =>
+            (GetLocalizedString(language, key1), GetLocalizedString(language, key2));
+        public (string, string, string) GetLocalizedString(string language, string key1, string key2, string key3) => (
+            GetLocalizedString(language, key1), GetLocalizedString(language, key2), GetLocalizedString(language, key3));
+        public (string, string, string, string)
+            GetLocalizedString(string language, string key1, string key2, string key3, string key4) => (
+            GetLocalizedString(language, key1), GetLocalizedString(language, key2), GetLocalizedString(language, key3),
+            GetLocalizedString(language, key4));
+        public (string, string, string, string, string) GetLocalizedString(string language, string key1, string key2,
+            string key3, string key4, string key5) => (GetLocalizedString(language, key1),
+            GetLocalizedString(language, key2), GetLocalizedString(language, key3), GetLocalizedString(language, key4),
+            GetLocalizedString(language, key5));
+        public (string, string, string, string, string, string) GetLocalizedString(string language, string key1,
+            string key2, string key3, string key4, string key5, string key6) => (GetLocalizedString(language, key1),
+            GetLocalizedString(language, key2), GetLocalizedString(language, key3), GetLocalizedString(language, key4),
+            GetLocalizedString(language, key5), GetLocalizedString(language, key6));
+        public (string, string, string, string, string, string, string) GetLocalizedString(string language, string key1,
+            string key2, string key3, string key4, string key5, string key6, string key7) => (
+            GetLocalizedString(language, key1), GetLocalizedString(language, key2), GetLocalizedString(language, key3),
+            GetLocalizedString(language, key4), GetLocalizedString(language, key5), GetLocalizedString(language, key6),
+            GetLocalizedString(language, key7));
+        public (string, string, string, string, string, string, string, string) GetLocalizedString(string language,
+            string key1, string key2, string key3, string key4, string key5, string key6, string key7, string key8) => (
+            GetLocalizedString(language, key1), GetLocalizedString(language, key2), GetLocalizedString(language, key3),
+            GetLocalizedString(language, key4), GetLocalizedString(language, key5), GetLocalizedString(language, key6),
+            GetLocalizedString(language, key7), GetLocalizedString(language, key8));
+
+        public (string, string) GetLocalizedString(Models.Database.Guild forGuild, string key1, string key2) => GetLocalizedString(forGuild?.Localization, key1, key2);
+        public (string, string, string) GetLocalizedString(Models.Database.Guild forGuild, string key1, string key2, string key3) => GetLocalizedString(forGuild?.Localization, key1, key2, key3);
+        public (string, string, string, string) GetLocalizedString(Models.Database.Guild forGuild, string key1, string key2, string key3, string key4) => GetLocalizedString(forGuild?.Localization, key1, key2, key3, key4);
+        public (string, string, string, string, string) GetLocalizedString(Models.Database.Guild forGuild, string key1, string key2, string key3, string key4, string key5) => GetLocalizedString(forGuild?.Localization, key1, key2, key3, key4, key5);
+        public (string, string, string, string, string, string) GetLocalizedString(Models.Database.Guild forGuild, string key1, string key2, string key3, string key4, string key5, string key6) => GetLocalizedString(forGuild?.Localization, key1, key2, key3, key4, key5, key6);
+        public (string, string, string, string, string, string, string) GetLocalizedString(Models.Database.Guild forGuild, string key1, string key2, string key3, string key4, string key5, string key6, string key7) => GetLocalizedString(forGuild?.Localization, key1, key2, key3, key4, key5, key6, key7);
+        public (string, string, string, string, string, string, string, string) GetLocalizedString(Models.Database.Guild forGuild, string key1, string key2, string key3, string key4, string key5, string key6, string key7, string key8) => GetLocalizedString(forGuild?.Localization, key1, key2, key3, key4, key5, key6, key7, key8);
+        
+        public (string, string) GetGeneralString(string key1, string key2) => GetLocalizedString((string)null, key1, key2);
+        public (string, string, string) GetGeneralString(string key1, string key2, string key3) => GetLocalizedString((string)null, key1, key2, key3);
+        public (string, string, string, string) GetGeneralString(string key1, string key2, string key3, string key4) => GetLocalizedString((string)null, key1, key2, key3, key4);
+        public (string, string, string, string, string) GetGeneralString(string key1, string key2, string key3, string key4, string key5) => GetLocalizedString((string)null, key1, key2, key3, key4, key5);
+        public (string, string, string, string, string, string) GetGeneralString(string key1, string key2, string key3, string key4, string key5, string key6) => GetLocalizedString((string)null, key1, key2, key3, key4, key5, key6);
+        public (string, string, string, string, string, string, string) GetGeneralString(string key1, string key2, string key3, string key4, string key5, string key6, string key7) => GetLocalizedString((string)null, key1, key2, key3, key4, key5, key6, key7);
+        public (string, string, string, string, string, string, string, string) GetGeneralString(string key1, string key2, string key3, string key4, string key5, string key6, string key7, string key8) => GetLocalizedString((string)null, key1, key2, key3, key4, key5, key6, key7, key8);
     }
 }
