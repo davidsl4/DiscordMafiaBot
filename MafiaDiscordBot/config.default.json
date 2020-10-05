@@ -23,5 +23,6 @@
     "keys": { // We suggest you to not change here anything, this section is for advanced users only
       
     }
-  }
+  },
+  "color": 0 // Main color of the bot, use any color picker that generates HEX code for your color and use https://www.rapidtables.com/convert/number/hex-to-decimal.html to convert it to numeric value (decimal)
 }
