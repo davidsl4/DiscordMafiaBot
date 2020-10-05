@@ -36,7 +36,12 @@ namespace MafiaDiscordBot
             // create a service collection
             services = new ServiceCollection()
                 // add a stopwatch to it
-                .AddSingleton<Stopwatch>()
+                .AddSingleton(((Func<Stopwatch>)(() =>
+                {
+                    Stopwatch sw = new Stopwatch();
+                    sw.Start();
+                    return sw;
+                }))())
                 // add a configuration
                 .AddSingleton(_configuration = new ConfigurationBuilder()
                     .AddJsonFile(Path.GetFullPath(Environment.GetEnvironmentVariable("settings file") ?? "config.json", AppContext.BaseDirectory))
@@ -55,9 +60,8 @@ namespace MafiaDiscordBot
                 .AddSingleton<StartupService>()
                 .AddSingleton<LocalizationService>()
                 .AddSingleton<SerialKeyValidatorService>()
+                .AddSingleton<SystemMetricsService>()
                 
-                // add modules to the service collection
-                .AddSingleton<Modules.Developer>()
                 // build the service collection
                 .BuildServiceProvider();
 

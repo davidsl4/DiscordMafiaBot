@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -21,6 +22,8 @@ namespace MafiaDiscordBot.Services
             add => _messageReceivedEventHandlers = _messageReceivedEventHandlers.Add(value);
             remove => _messageReceivedEventHandlers = _messageReceivedEventHandlers.Remove(value);
         }
+
+        public int InstalledModulesCount => _commands?.Modules?.Count() ?? 0;
         
         public IncomingMessagesHandlerService(IServiceProvider services)
         {
@@ -49,7 +52,7 @@ namespace MafiaDiscordBot.Services
             var res = await _commands.ExecuteAsync(
                 context: context,
                 argPos: argPos,
-                services: null);
+                services: _services);
             if (!res.IsSuccess && res is ExecuteResult er && er.Exception != null) throw er.Exception;
             return res;
         }
@@ -61,8 +64,15 @@ namespace MafiaDiscordBot.Services
                 int argPos = -1;
                 if (sum.HasStringPrefix(_configuration["default_prefix"], ref argPos) || sum.HasMentionPrefix(_discord.CurrentUser, ref argPos))
                 {
-                    var res = await HandleCommandAsync(sum, argPos);
-                    if (!res.IsSuccess) argPos = -1;
+                    try
+                    {
+                        var res = await HandleCommandAsync(sum, argPos);
+                        if (!res.IsSuccess) argPos = -1;
+                    }
+                    catch (Exception e)
+                    {
+                        
+                    }
                 }
 
                 // The command not found if the argPos is -1
