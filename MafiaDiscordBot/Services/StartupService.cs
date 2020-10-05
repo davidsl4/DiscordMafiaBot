@@ -38,10 +38,19 @@ namespace MafiaDiscordBot.Services
             // load services
             services.GetRequiredService<LocalizationService>().LoadAllAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             services.GetRequiredService<DatabaseService>();
+            
+            // set AppDomain exit handler
+            AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+            {
+                if (_discord.ConnectionState == ConnectionState.Connected)
+                    _discord.StopAsync().GetAwaiter().GetResult();
+            };
 
+            // configure timers
             var updateGameStatusTimer = new Timer(1000 * 30); // run the timer each 30 seconds 
             updateGameStatusTimer.Elapsed += UpdateGameStatus;
 
+            // set discord connect and disconnect handlers
             _discord.Connected += () => {
                 updateGameStatusTimer.Start();
                 return Task.CompletedTask;
@@ -52,6 +61,7 @@ namespace MafiaDiscordBot.Services
                 return Task.CompletedTask;
             };
 
+            // install bot commands & prepare incoming message handler
             services.GetRequiredService<IncomingMessagesHandlerService>().InstallCommandsAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         }
 

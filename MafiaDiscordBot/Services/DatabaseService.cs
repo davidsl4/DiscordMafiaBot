@@ -62,6 +62,9 @@ namespace MafiaDiscordBot.Services
                 // set the property in the database service to the new instance
                 prop.SetValue(this, instance);
             }
+
+
+            Log.Debug("Database service successfully initialized");
         }
 
         private T ParseResult<T>(DbDataReader reader)

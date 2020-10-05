@@ -12,6 +12,7 @@ namespace MafiaDiscordBot.Services
         [DllImport("KeyManager.dll", EntryPoint = "CheckKey")]
         private static extern byte CheckKey_32(string key);
         
+        [Flags]
         public enum KeyStatus
         {
             None = 0,
