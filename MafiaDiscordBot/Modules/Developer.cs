@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using MafiaDiscordBot.Attributes.Discord.Commands;
 using MafiaDiscordBot.Extensions;
 using MafiaDiscordBot.Properties;
 using MafiaDiscordBot.Services;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace MafiaDiscordBot.Modules
 {
     [Group("dev")]
+    [RequireDeveloper]
     public class Developer : ModuleBase<SocketCommandContext>
     {
         private readonly IConfigurationRoot _config;
@@ -38,7 +40,7 @@ namespace MafiaDiscordBot.Modules
             var builder = new EmbedBuilder()
                 .WithTitle("Bot Information for Developer")
                 .WithDescription("Make sure you know what you do when you maintain the bot with this command.")
-                .WithColor(new Color(0xB6E60A))
+                .WithColor(new Color(uint.Parse(_config["color"])))
                 .WithCurrentTimestamp()
                 .WithAuthor(author =>
                 {
@@ -144,7 +146,7 @@ namespace MafiaDiscordBot.Modules
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
-            await Context.Channel.SendMessageAsync("Done.").ConfigureAwait(false);
+            await Context.Channel.SendMessageAsync("Done. <:checkmark:603479419964620810>").ConfigureAwait(false);
         }
     }
 }
