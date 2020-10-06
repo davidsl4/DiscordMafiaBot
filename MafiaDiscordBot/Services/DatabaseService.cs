@@ -130,7 +130,7 @@ namespace MafiaDiscordBot.Services
                 reader.Close();
 
                 empty.Filled = true;
-                empty.LastAccessed = DateTime.UtcNow;
+                empty.LastAccessed = DateTime.Now;
 
                 var afterParseAttr = destinationType.GetCustomAttributes(typeof(AfterSqlParseAttribute), false);
                 if (afterParseAttr.Length > 0)

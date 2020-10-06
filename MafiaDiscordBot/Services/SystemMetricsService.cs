@@ -35,7 +35,7 @@ namespace MafiaDiscordBot.Services
         {
             get
             {
-                if (DateTime.UtcNow - _lastMemoryMetricsUpdate > _memoryUpdateInterval) UpdateMemoryMetrics();
+                if (DateTime.Now - _lastMemoryMetricsUpdate > _memoryUpdateInterval) UpdateMemoryMetrics();
                 return _memory.Used;
             }
         }
@@ -44,7 +44,7 @@ namespace MafiaDiscordBot.Services
         {
             get
             {
-                if (DateTime.UtcNow - _lastMemoryMetricsUpdate > _memoryUpdateInterval) UpdateMemoryMetrics();
+                if (DateTime.Now - _lastMemoryMetricsUpdate > _memoryUpdateInterval) UpdateMemoryMetrics();
                 return _memory.Total;
             }
         }
@@ -53,7 +53,7 @@ namespace MafiaDiscordBot.Services
         {
             get
             {
-                if (DateTime.UtcNow - _lastMemoryMetricsUpdate > _memoryUpdateInterval) UpdateMemoryMetrics();
+                if (DateTime.Now - _lastMemoryMetricsUpdate > _memoryUpdateInterval) UpdateMemoryMetrics();
                 return _memory.Free;
             }
         }
@@ -97,7 +97,7 @@ namespace MafiaDiscordBot.Services
 
                 _memory.Used = _memory.Total - _memory.Free;
 
-                _lastMemoryMetricsUpdate = DateTime.UtcNow;
+                _lastMemoryMetricsUpdate = DateTime.Now;
             }
         }
 
