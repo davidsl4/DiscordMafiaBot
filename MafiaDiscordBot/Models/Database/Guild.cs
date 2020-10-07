@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using SqlKata;
 
 namespace MafiaDiscordBot.Models.Database
 {
-    public abstract class Guild : IDatabaseObject
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    public class Guild : IDatabaseObject
     {
         private ulong _id;
         private ulong _gameCategoryId;

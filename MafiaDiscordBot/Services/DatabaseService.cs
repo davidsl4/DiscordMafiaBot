@@ -94,6 +94,7 @@ namespace MafiaDiscordBot.Services
                 }
 
                 var destinationType = typeof(T);
+                var idbType = typeof(Model.IDatabaseObject);
                 var empty = (T) Activator.CreateInstance(destinationType);
                 if (empty == null) return null;
                 var props = destinationType.GetProperties();
@@ -101,6 +102,7 @@ namespace MafiaDiscordBot.Services
                 foreach (var prop in props)
                 {
                     if (!prop.CanWrite) continue;
+                    if (idbType.GetProperty(prop.Name) != null) continue;
                     var attributes = prop.GetCustomAttributes(false);
                     if (attributes.Any(x => x is IgnoreAttribute)) continue;
                     var sqlColumnAttr = (ColumnAttribute) attributes.FirstOrDefault(x => x is ColumnAttribute);
@@ -156,9 +158,11 @@ namespace MafiaDiscordBot.Services
         private string QuerySaveResult<T>(string tableName, T data) where T : class, Model.IDatabaseObject
         {
             var type = typeof(T);
-            Dictionary<string, object> dictionary = new Dictionary<string, object>();
-            foreach (PropertyInfo runtimeProperty in type.GetProperties())
+            var idbType = typeof(Model.IDatabaseObject);
+            var dictionary = new Dictionary<string, object>();
+            foreach (var runtimeProperty in type.GetProperties())
             {
+                if (idbType.GetProperty(runtimeProperty.Name) != null) continue;
                 if (runtimeProperty.GetCustomAttribute(typeof(IgnoreAttribute)) != null) continue;
                 var obj = runtimeProperty.GetValue(data);
                 var str = (runtimeProperty.GetCustomAttribute(typeof (ColumnAttribute)) is ColumnAttribute customAttribute ? customAttribute.Name : null) ?? runtimeProperty.Name;
@@ -167,9 +171,37 @@ namespace MafiaDiscordBot.Services
                 dictionary.Add(str, obj);
             }
 
-            return _compiler.Compile(new Query(tableName)
-                .AsInsert(dictionary)) + " ON DUPLICATE KEY SET " + string.Join(",",
-                dictionary.Select(kvp => $"{kvp.Key}={kvp.Value}").ToArray());
+            // ReSharper disable once VariableHidesOuterVariable
+            SqlResult CompileUpdateQuery(Query query)
+            {
+                var ctx = new SqlResult()
+                {
+                    Query = query
+                };
+                if (!ctx.Query.HasComponent("from", _compiler.EngineCode))
+                    throw new InvalidOperationException("No table set to update");
+                var oneComponent1 = ctx.Query.GetOneComponent<AbstractFrom>("from", _compiler.EngineCode);
+                if (oneComponent1 is RawFromClause rawFromClause)
+                {
+                    ctx.Bindings.AddRange(rawFromClause.Bindings);
+                }
+                var oneComponent2 = ctx.Query.GetOneComponent<InsertClause>("update", _compiler.EngineCode);
+                var stringList = new List<string>();
+                for (var index = oneComponent2.Columns.Count - 1; index >= 0; --index)
+                    stringList.Add(_compiler.Wrap(oneComponent2.Columns[index]) + " = " + _compiler.Parameter(ctx, oneComponent2.Values[index]));
+                var str2 = _compiler.CompileWheres(ctx);
+                if (!string.IsNullOrEmpty(str2))
+                    str2 = " " + str2;
+                var str3 = string.Join(", ", stringList);
+                ctx.RawSql = "UPDATE " + str3 + str2;
+                return ctx;
+            }
+            
+            var query = _compiler.Compile(new Query(tableName)
+                .AsInsert(dictionary)) + " ON DUPLICATE KEY  " + CompileUpdateQuery(new Query(tableName)
+                .AsUpdate(dictionary));
+            Console.WriteLine(query);
+            return query;
         }
 
         private static string GetSqlColumnName<T>(string propertyName) =>
