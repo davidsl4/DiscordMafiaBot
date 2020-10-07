@@ -19,19 +19,19 @@ namespace MafiaDiscordBot.Modules
     [RequireDeveloper]
     public class Developer : ModuleBase<SocketCommandContext>
     {
-        private readonly IConfigurationRoot _config;
-        private readonly SerialKeyValidatorService _serialKeyValidator;
-        private readonly IncomingMessagesHandlerService _incomingMessagesHandler;
-        private readonly Stopwatch _uptime;
-        private readonly SystemMetricsService _sysmet;
+        private static IConfigurationRoot _config = null;
+        private static SerialKeyValidatorService _serialKeyValidator = null;
+        private static IncomingMessagesHandlerService _incomingMessagesHandler = null;
+        private static Stopwatch _uptime = null;
+        private static SystemMetricsService _sysmet = null;
         
         public Developer(IServiceProvider service)
         {
-            _config = service.GetRequiredService<IConfigurationRoot>();
-            _serialKeyValidator = service.GetRequiredService<SerialKeyValidatorService>();
-            _incomingMessagesHandler = service.GetRequiredService<IncomingMessagesHandlerService>();
-            _uptime = service.GetRequiredService<Stopwatch>();
-            _sysmet = service.GetRequiredService<SystemMetricsService>();
+            _config ??= service.GetRequiredService<IConfigurationRoot>();
+            _serialKeyValidator ??= service.GetRequiredService<SerialKeyValidatorService>();
+            _incomingMessagesHandler ??= service.GetRequiredService<IncomingMessagesHandlerService>();
+            _uptime ??= service.GetRequiredService<Stopwatch>();
+            _sysmet ??= service.GetRequiredService<SystemMetricsService>();
         }
 
         [Command("botinfo")]
