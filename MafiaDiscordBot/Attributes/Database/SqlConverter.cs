@@ -1,26 +1,26 @@
 ﻿using System;
 using MafiaDiscordBot.Converters.Database;
+// ReSharper disable UnusedMember.Global
 
 namespace MafiaDiscordBot.Attributes.Database
 {
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-    class SqlConverterAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Property)]
+    internal abstract class SqlConverterAttribute : Attribute
     {
-        Type _converter;
-        Type Converter { get => _converter; }
+        private Type Converter { get; }
 
-        public SqlConverterAttribute(Type converter)
+        protected SqlConverterAttribute(Type converter)
         {
-            _converter = converter.IsSubclassOf(typeof(SqlConverter)) ? converter : throw new TypeInitializationException(converter.Name, null);
+            Converter = converter.IsSubclassOf(typeof(SqlConverter)) ? converter : throw new TypeInitializationException(converter.Name, null);
         }
 
-        public object Read(object input) => ((SqlConverter)Activator.CreateInstance(Converter)).Read(input);
+        public object Read(object input) => ((SqlConverter)Activator.CreateInstance(Converter))?.Read(input);
         public (object returnedValue, object state) ReadWithState(object input)
         {
-            var converter = ((SqlConverter)Activator.CreateInstance(Converter));
-            if (converter.UseReadWithState()) return converter.ReadWithState(input);
-            return (converter.Read(input), null);
+            var converter = (SqlConverter)Activator.CreateInstance(Converter);
+            if (converter != null && converter.UseReadWithState()) return converter.ReadWithState(input);
+            return (converter?.Read(input), null);
         }
-        public object Write(object obj) => ((SqlConverter)Activator.CreateInstance(Converter)).Write(obj);
+        public object Write(object obj) => ((SqlConverter)Activator.CreateInstance(Converter))?.Write(obj);
     }
 }

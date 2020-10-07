@@ -16,16 +16,15 @@ namespace MafiaDiscordBot.Services
         [Flags]
         public enum KeyStatus
         {
-            None = 0,
             KeyVerified = 1 << 0,
             Original = 1 << 1,
             HostedByDevs = 1 << 2,
             Premium = 1 << 3,
-            OwnedByDevs = 1 << 4,
+            OwnedByDevs = 1 << 4
         }
         
         private readonly IConfigurationRoot _config;
-        private KeyStatus? _botKeyStatus = null; 
+        private KeyStatus? _botKeyStatus; 
 
         public SerialKeyValidatorService(IServiceProvider service)
         {
@@ -34,7 +33,7 @@ namespace MafiaDiscordBot.Services
 
         public KeyStatus GetKeyStatus() => _botKeyStatus ??= GetKeyStatus(_config["key"]);
 
-        public KeyStatus GetKeyStatus(string key)
+        private static KeyStatus GetKeyStatus(string key)
         {
             Log.Verbose("Validating and getting status of key {key}", key);
             return (KeyStatus)(IntPtr.Size == 8 /* 64bit */ ? CheckKey_64(key) : CheckKey_32(key));            

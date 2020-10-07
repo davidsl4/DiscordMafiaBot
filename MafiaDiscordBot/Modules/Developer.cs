@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -12,6 +11,8 @@ using MafiaDiscordBot.Properties;
 using MafiaDiscordBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedType.Global
 
 namespace MafiaDiscordBot.Modules
 {
@@ -19,11 +20,12 @@ namespace MafiaDiscordBot.Modules
     [RequireDeveloper]
     public class Developer : ModuleBase<SocketCommandContext>
     {
-        private static IConfigurationRoot _config = null;
-        private static SerialKeyValidatorService _serialKeyValidator = null;
-        private static IncomingMessagesHandlerService _incomingMessagesHandler = null;
-        private static Stopwatch _uptime = null;
-        private static SystemMetricsService _sysmet = null;
+        private static IConfigurationRoot _config;
+        private static SerialKeyValidatorService _serialKeyValidator;
+        private static IncomingMessagesHandlerService _incomingMessagesHandler;
+        private static Stopwatch _uptime;
+        private static SystemMetricsService _systemMetrics;
+        private static DatabaseService _database;
         
         public Developer(IServiceProvider service)
         {
@@ -31,9 +33,11 @@ namespace MafiaDiscordBot.Modules
             _serialKeyValidator ??= service.GetRequiredService<SerialKeyValidatorService>();
             _incomingMessagesHandler ??= service.GetRequiredService<IncomingMessagesHandlerService>();
             _uptime ??= service.GetRequiredService<Stopwatch>();
-            _sysmet ??= service.GetRequiredService<SystemMetricsService>();
+            _systemMetrics ??= service.GetRequiredService<SystemMetricsService>();
+            _database ??= service.GetRequiredService<DatabaseService>();
         }
 
+        // ReSharper disable once StringLiteralTypo
         [Command("botinfo")]
         public async Task BotInfo()
         {
@@ -57,7 +61,7 @@ namespace MafiaDiscordBot.Modules
                         PREMIUM_AVAILABLE = "<:coin:762424024537759785> ",
                         OWNED_BY_DEVS = "<:badgeStaff:440460762377486357>";
 
-                    bool HasPerk(SerialKeyValidatorService.KeyStatus perk) =>
+                    static bool HasPerk(SerialKeyValidatorService.KeyStatus perk) =>
                         (_serialKeyValidator.GetKeyStatus() & perk) == perk;
 
                     if (!HasPerk(SerialKeyValidatorService.KeyStatus.KeyVerified)) return "\u200B";
@@ -84,7 +88,7 @@ namespace MafiaDiscordBot.Modules
                 }))())
                 .AddInlineField("RAM", ((Func<string>) (() =>
                 {
-                    string FormatSize(long bytes)
+                    static string FormatSize(long bytes)
                     {
                         const long
                             Kb = 1024,
@@ -93,6 +97,7 @@ namespace MafiaDiscordBot.Modules
                         
                         if (bytes >= Gb) return $"{(float) bytes / Gb:0.##} GB";
                         if (bytes >= Mb) return $"{(float) bytes / Mb:0.##} MB";
+                        // ReSharper disable once ConvertIfStatementToReturnStatement
                         if (bytes >= Kb) return $"{(float) bytes / Kb:0.##} KB";
                         return $"{bytes} bytes";
                     }
@@ -100,15 +105,15 @@ namespace MafiaDiscordBot.Modules
                     long bot;
                     using (var proc = Process.GetCurrentProcess())
                         bot = proc.PrivateMemorySize64;
-                    var used = _sysmet.RamUsed;
-                    var free = _sysmet.RamFree;
-                    var total = _sysmet.RamTotal;
+                    var used = _systemMetrics.RamUsed;
+                    var free = _systemMetrics.RamFree;
+                    var total = _systemMetrics.RamTotal;
                     
-                    var usedp = (float) used / total * 100;
-                    var freep = (float) free / total * 100;
+                    var usedPercentage = (float) used / total * 100;
+                    var freePercentage = (float) free / total * 100;
 
                     return
-                        $"Bot: {FormatSize(bot)}\nUsed: {FormatSize(used)} ({usedp:0.##}%)\nFree: {FormatSize(free)} ({freep:0.##}%)\nTotal: {FormatSize(total)}";
+                        $"Bot: {FormatSize(bot)}\nUsed: {FormatSize(used)} ({usedPercentage:0.##}%)\nFree: {FormatSize(free)} ({freePercentage:0.##}%)\nTotal: {FormatSize(total)}";
                 }))())
                 //.AddInlineField("CPU", "Bot: 0%\nUsed: 31%\nFree: 69%")
                 .AddInlineField("Running machine", ((Func<string>) (() =>
@@ -117,11 +122,11 @@ namespace MafiaDiscordBot.Modules
                         CHECKMARK = "<:checkmark:603479419964620810>",
                         XMARK = "<:xmark:603479420858269696>";
                     
-                    StringBuilder sb = new StringBuilder();
-                    sb.AppendLine($"OS: {_sysmet.OSName} {(IntPtr.Size == 8 ? "x64" : "x86")}");
-                    sb.AppendLine($"OS Version: {_sysmet.OSVersion}");
-                    sb.AppendLine($"Is Windows: {(_sysmet.IsWindows ? CHECKMARK : XMARK)}");
-                    sb.AppendLine($"Is Linux: {(_sysmet.IsLinux ? CHECKMARK : XMARK)}");
+                    var sb = new StringBuilder();
+                    sb.AppendLine($"OS: {_systemMetrics.OSName} {(IntPtr.Size == 8 ? "x64" : "x86")}");
+                    sb.AppendLine($"OS Version: {_systemMetrics.OSVersion}");
+                    sb.AppendLine($"Is Windows: {(SystemMetricsService.IsWindows ? CHECKMARK : XMARK)}");
+                    sb.AppendLine($"Is Linux: {(SystemMetricsService.IsLinux ? CHECKMARK : XMARK)}");
 
                     sb.Append("Uptime: ");
                     var OSUptime = TimeSpan.FromMilliseconds(Environment.TickCount64);
@@ -141,11 +146,20 @@ namespace MafiaDiscordBot.Modules
                 .ConfigureAwait(false);
         }
 
+        // ReSharper disable once StringLiteralTypo
         [Command("gcclear")]
         public async Task ClearGarbageCollector()
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
+            await Context.Channel.SendMessageAsync("Done. <:checkmark:603479419964620810>").ConfigureAwait(false);
+        }
+
+        // ReSharper disable once StringLiteralTypo
+        [Command("dbcacheclear")]
+        public async Task ClearDatabaseCache()
+        {
+            _database.ClearCachedData();
             await Context.Channel.SendMessageAsync("Done. <:checkmark:603479419964620810>").ConfigureAwait(false);
         }
     }

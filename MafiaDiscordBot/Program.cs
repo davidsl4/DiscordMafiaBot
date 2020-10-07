@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Discord.Commands;
 using Discord.WebSocket;
 using MafiaDiscordBot.Services;
 using Microsoft.Extensions.Configuration;
@@ -13,12 +11,11 @@ using Serilog.Sinks.SystemConsole.Themes;
 
 namespace MafiaDiscordBot
 {
-    class Program
+    internal static class Program
     {
-        private static IConfigurationRoot _configuration;
-        internal static IServiceProvider services { get; private set; }
+        private static IServiceProvider services { get; set; }
 
-        static async Task Main(string[] args)
+        private static async Task Main()
         {
             #region initialize logger
             Log.Logger = new LoggerConfiguration()
@@ -38,18 +35,17 @@ namespace MafiaDiscordBot
                 // add a stopwatch to it
                 .AddSingleton(((Func<Stopwatch>)(() =>
                 {
-                    Stopwatch sw = new Stopwatch();
+                    var sw = new Stopwatch();
                     sw.Start();
                     return sw;
                 }))())
                 // add a configuration
-                .AddSingleton(_configuration = new ConfigurationBuilder()
+                .AddSingleton(new ConfigurationBuilder()
                     .AddJsonFile(Path.GetFullPath(Environment.GetEnvironmentVariable("settings file") ?? "config.json", AppContext.BaseDirectory))
                     .SetFileLoadExceptionHandler(e =>
                     {
                         Log.Fatal(e.Exception, "An exception thrown when tried to load configuration file {path}", e.Provider.Source.Path);
                         Environment.Exit(1);
-                        return;
                     })
                     .Build()
                 )

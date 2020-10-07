@@ -10,7 +10,7 @@ using Serilog.Events;
 
 namespace MafiaDiscordBot.Services
 {
-    class StartupService
+    internal class StartupService
     {
         private struct ServiceProps
         {
@@ -24,14 +24,12 @@ namespace MafiaDiscordBot.Services
         
         private readonly DiscordSocketClient _discord;
         private readonly IConfigurationRoot _config;
-        private readonly IServiceProvider _services;
         private ServiceProps _props;
 
         public StartupService(IServiceProvider services)
         {
-            _services = services;
-            _config = _services.GetRequiredService<IConfigurationRoot>();
-            _discord = _services.GetRequiredService<DiscordSocketClient>();
+            _config = services.GetRequiredService<IConfigurationRoot>();
+            _discord = services.GetRequiredService<DiscordSocketClient>();
             _props = new ServiceProps();
             
             // load services
@@ -46,13 +44,13 @@ namespace MafiaDiscordBot.Services
             };
 
             // configure timers
-            var updateGameStatusTimer = new Timer(1000 * 30); // run the timer each 30 seconds 
+            var updateGameStatusTimer = new AutoStartTimer(1000 * 30); // run the timer each 30 seconds 
             updateGameStatusTimer.Elapsed += UpdateGameStatus;
 
             // set discord connect and disconnect handlers
             ((Action)(() =>
             {
-                bool _loggedConnection = false;
+                var _loggedConnection = false;
                 _discord.Connected += () =>
                 {
                     Log.Write(_loggedConnection ? LogEventLevel.Verbose : LogEventLevel.Debug,
@@ -82,7 +80,7 @@ namespace MafiaDiscordBot.Services
 
         public async Task StartAsync()
         {
-            string discordToken = _config["bot_token"];
+            var discordToken = _config["bot_token"];
             if (string.IsNullOrWhiteSpace(discordToken))
             {
                 Log.Fatal("You have to provide a token for your bot");

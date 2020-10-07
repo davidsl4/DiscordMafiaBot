@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MafiaDiscordBot.Attributes.Database
 {
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-    class SqlColumnAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Property)]
+    internal class SqlColumnAttribute : Attribute
     {
-        public string Name { get; set; }
+        public string Name { get; }
         public SqlColumnAttribute(string name)
         {
             Name = name;

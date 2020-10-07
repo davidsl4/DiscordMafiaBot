@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace MafiaDiscordBot.Converters.Database
 {
-    class SqlConverter
+    [SuppressMessage("ReSharper", "VirtualMemberNeverOverridden.Global")]
+    [SuppressMessage("ReSharper", "UnusedParameter.Global")]
+    internal class SqlConverter
     {
         public virtual object Read(object input) => null;
         public virtual (object returnedValue, object state) ReadWithState(object input) => (null, null);

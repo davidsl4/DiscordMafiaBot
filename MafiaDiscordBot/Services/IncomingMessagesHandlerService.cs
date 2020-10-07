@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -23,10 +22,7 @@ namespace MafiaDiscordBot.Services
         private readonly IConfigurationRoot _configuration;
         private readonly LocalizationService _localization;
         private readonly DatabaseService _database;
-        private readonly Random _random;
 
-        private ConcurrentDictionary<ulong, string> _prefixesPerGuild;
-        
         private ImmutableArray<Func<SocketMessage, Task>> _messageReceivedEventHandlers = ImmutableArray.Create< Func<SocketMessage, Task>>();
         public event Func<SocketMessage, Task> MessageReceived {
             add => _messageReceivedEventHandlers = _messageReceivedEventHandlers.Add(value);
@@ -44,16 +40,13 @@ namespace MafiaDiscordBot.Services
             _database = services.GetRequiredService<DatabaseService>();
             
             _commands = new CommandService();
-            
-            _prefixesPerGuild = new ConcurrentDictionary<ulong, string>();
-            _random = new Random();
 
             _discord.MessageReceived += messageReceived;
         }
         
         public async Task<IncomingMessagesHandlerService> InstallCommandsAsync()
         {
-            await _commands.AddModulesAsync(assembly: Assembly.GetEntryAssembly(), services: _services).ConfigureAwait(false);
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services).ConfigureAwait(false);
             return this;
         }
 
@@ -65,9 +58,9 @@ namespace MafiaDiscordBot.Services
             // Execute the command with the command context we just
             // created, along with the service provider for precondition checks.
             var res = await _commands.ExecuteAsync(
-                context: context,
-                argPos: argPos,
-                services: _services);
+                context,
+                argPos,
+                _services);
             if (!res.IsSuccess && res is ExecuteResult er && er.Exception != null) throw er.Exception;
             return res;
         }
@@ -81,7 +74,7 @@ namespace MafiaDiscordBot.Services
                     var prefix = _configuration["default_prefix"];
 
                     if (arg.Channel is ITextChannel guildTextChannel)
-                        prefix = (await _database.Guilds.GetGuild(guildTextChannel.Guild).ConfigureAwait(false))?.Prefix ?? prefix;
+                        prefix = (await _database.Guilds.GetGuild(guildTextChannel).ConfigureAwait(false))?.Prefix ?? prefix;
                     
                     var argPos = -1;
                     if (sum.HasStringPrefix(prefix, ref argPos) ||
@@ -112,7 +105,7 @@ namespace MafiaDiscordBot.Services
                     {
                         void AppendTabs()
                         {
-                            for (int i = 0; i < level - 1; i++)
+                            for (var i = 0; i < level - 1; i++)
                                 fileOutput.Append("\t");
                         }
 
@@ -186,7 +179,7 @@ namespace MafiaDiscordBot.Services
 
                         if (guildCurrentUser?.GetPermissions(messageTextChannel).SendMessages ?? false)
                         {
-                            if (!(guildCurrentUser?.GetPermissions(messageTextChannel).EmbedLinks ?? false))
+                            if (!guildCurrentUser.GetPermissions(messageTextChannel).EmbedLinks)
                                 goto string_message;
                         }
                     }

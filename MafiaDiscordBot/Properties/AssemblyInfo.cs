@@ -1,6 +1,6 @@
 ﻿namespace MafiaDiscordBot.Properties
 {
-    public class AssemblyInfo
+    public static class AssemblyInfo
     {
         internal const string BOT_VERSION = "1.0.0";
     }

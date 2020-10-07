@@ -3,7 +3,7 @@ using MafiaDiscordBot.Attributes.Database;
 
 namespace MafiaDiscordBot.Models.Database
 {
-    public class Guild : IDatabaseObject
+    public abstract class Guild : IDatabaseObject
     {
         private ulong _id;
         private ulong _gameCategoryId;

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Management;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
@@ -9,27 +8,27 @@ namespace MafiaDiscordBot.Services
 {
     public class SystemMetricsService
     {
-        struct MemoryMetrics
+        private struct MemoryMetrics
         {
             public long Total;
             public long Used;
             public long Free;
         }
 
-        public SystemMetricsService(IServiceProvider service)
+        public SystemMetricsService()
         {
             UpdateOSInfo();
         }
 
-        public bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-        public bool IsOSX => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-        public bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        public bool IsUnix => IsLinux || IsOSX;
+        public static bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        private static bool IsOSX => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static bool IsUnix => IsLinux || IsOSX;
 
         private MemoryMetrics _memory;
         private DateTime _lastMemoryMetricsUpdate = DateTime.MinValue;
-        private object _memoryMetricsLocker = new object();
-        private TimeSpan _memoryUpdateInterval = TimeSpan.FromSeconds(5);
+        private readonly object _memoryMetricsLocker = new object();
+        private readonly TimeSpan _memoryUpdateInterval = TimeSpan.FromSeconds(5);
 
         public long RamUsed
         {
@@ -58,7 +57,7 @@ namespace MafiaDiscordBot.Services
             }
         }
 
-        public void UpdateMemoryMetrics()
+        private void UpdateMemoryMetrics()
         {
             if (IsUnix) UpdateUnixMemoryMetrics();
             else UpdateWindowsMemoryMetrics();
@@ -70,14 +69,14 @@ namespace MafiaDiscordBot.Services
             {
                 var output = "";
 
-                var info = new ProcessStartInfo();
-                info.FileName = "wmic";
+                var info = new ProcessStartInfo
+                {
+                    FileName = "wmic", Arguments = "os get freephysicalmemory /Value", RedirectStandardOutput = true
+                };
                 //info.Arguments = "OS get FreePhysicalMemory,TotalVisibleMemorySize /Value";
-                info.Arguments = "os get freephysicalmemory /Value";
-                info.RedirectStandardOutput = true;
 
                 using (var process = Process.Start(info))
-                    output = process.StandardOutput.ReadToEnd();
+                    output = process?.StandardOutput?.ReadToEnd();
 
                 var lines = output.Trim().Split("\n");
                 var freeMemoryParts = lines[0].Split("=", StringSplitOptions.RemoveEmptyEntries);
@@ -107,10 +106,10 @@ namespace MafiaDiscordBot.Services
             {
                 var output = "";
 
-                var info = new ProcessStartInfo("free -m");
-                info.FileName = "/bin/bash";
-                info.Arguments = "-c \"free -m\"";
-                info.RedirectStandardOutput = true;
+                var info = new ProcessStartInfo("free -m")
+                {
+                    FileName = "/bin/bash", Arguments = "-c \"free -m\"", RedirectStandardOutput = true
+                };
 
                 using (var process = Process.Start(info))
                     output = process.StandardOutput.ReadToEnd();
@@ -127,7 +126,7 @@ namespace MafiaDiscordBot.Services
         public string OSName { get; private set; }
         public string OSVersion { get; private set; }
 
-        public void UpdateOSInfo()
+        private void UpdateOSInfo()
         {
             OSName = OSVersion = "Unknown";
 
@@ -144,37 +143,32 @@ namespace MafiaDiscordBot.Services
             else if (File.Exists("/usr/lib/os-release")) filename = "/usr/lib/os-release";
             else return;
 
-            using (var file = File.OpenRead(filename))
-            using (var reader = new StreamReader(file))
+            using var file = File.OpenRead(filename);
+            using var reader = new StreamReader(file);
+            // bit field property
+            //    - bit 1: os name fetched
+            //    - bit 2: os version fetched
+            byte readProps = 0;
+            while ((readProps & 0b11) != 0b11 && !reader.EndOfStream)
             {
-                // bit field property
-                //    - bit 1: os name fetched
-                //    - bit 2: os version fetched
-                byte readProps = 0;
-                while ((readProps & 0b11) != 0b11 && !reader.EndOfStream)
+                // Read the next line
+                var line = reader.ReadLine();
+                if (line == null) break;
+
+                // If we do not have the os name but the line have the name
+                const string OSNameKey = "NAME";
+                if ((readProps & 0b1) == 0 && line.StartsWith($"{OSNameKey}="))
                 {
-                    // Read the next line
-                    string line = reader.ReadLine();
-                    if (line == null) break;
-
-                    // If we do not have the os name but the line have the name
-                    const string OSNameKey = "NAME";
-                    if ((readProps & 0b1) == 0 && line.StartsWith($"{OSNameKey}="))
-                    {
-                        OSName = line.Substring(OSNameKey.Length + 1, line.Length - 1 - OSNameKey.Length - 1);
-                        readProps |= 0b1;
-                        continue;
-                    }
-
-                    // If we do not have the os version but the line have the version
-                    const string OSVersionKey = "VERSION_ID";
-                    if ((readProps & 0b10) == 0 && line.StartsWith($"{OSVersionKey}="))
-                    {
-                        OSVersion = line.Substring(OSVersionKey.Length + 1, line.Length - 1 - OSVersionKey.Length - 1);
-                        readProps |= 0b10;
-                        continue;
-                    }
+                    OSName = line.Substring(OSNameKey.Length + 1, line.Length - 1 - OSNameKey.Length - 1);
+                    readProps |= 0b1;
+                    continue;
                 }
+
+                // If we do not have the os version but the line have the version
+                const string OSVersionKey = "VERSION_ID";
+                if ((readProps & 0b10) != 0 || !line.StartsWith($"{OSVersionKey}=")) continue;
+                OSVersion = line.Substring(OSVersionKey.Length + 1, line.Length - 1 - OSVersionKey.Length - 1);
+                readProps |= 0b10;
             }
         }
         private void UpdateWindowsOSInfo()

@@ -2,19 +2,16 @@
 
 namespace MafiaDiscordBot.Attributes.Database
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property, AllowMultiple = false)]
-    class AfterSqlParseAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+    internal class AfterSqlParseAttribute : Attribute
     {
-        private string _methodName;
-        private string[] _sqlColumnsAsArgs;
-
-        public string MethodName { get => _methodName; }
-        public string[] SqlColumnsAsArgs { get => _sqlColumnsAsArgs; }
+        public string MethodName { get; }
+        public string[] SqlColumnsAsArgs { get; }
 
         public AfterSqlParseAttribute(string methodName, params string[] sqlColumnsAsArgs)
         {
-            _methodName = methodName;
-            _sqlColumnsAsArgs = sqlColumnsAsArgs;
+            MethodName = methodName;
+            SqlColumnsAsArgs = sqlColumnsAsArgs;
         }
     }
 }

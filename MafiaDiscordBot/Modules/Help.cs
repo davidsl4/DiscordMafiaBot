@@ -3,19 +3,20 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using MafiaDiscordBot.Extensions;
 using MafiaDiscordBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedType.Global
 
 namespace MafiaDiscordBot.Modules
 {
     [Group("help")]
     public class Help : ModuleBase<SocketCommandContext>
     {
-        private static IConfigurationRoot _config = null;
-        private static LocalizationService _localization = null;
-        private static DatabaseService _database = null;
+        private static IConfigurationRoot _config;
+        private static LocalizationService _localization;
+        private static DatabaseService _database;
         
         public Help(IServiceProvider service)
         {
@@ -33,8 +34,6 @@ namespace MafiaDiscordBot.Modules
             // Get the guild information from the database
             var dbGuild = await _database.Guilds.GetGuild(Context.Guild).ConfigureAwait(false);
             // Translate embed titles & category titles to the guild's prefered language
-            var (embedTitle, categoryGeneral, categoryGame) = _localization.GetLocalizedString(dbGuild,
-                "HELP_COMMAND_TITLE", "HELP_COMMAND_CATEGORY_GENERAL", "HELP_COMMAND_CATEGORY_GAME");
             // Build the embed object
             var prefix = dbGuild?.Prefix ?? _config["default_prefix"];
             var sb = new StringBuilder();

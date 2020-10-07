@@ -10,7 +10,7 @@ namespace MafiaDiscordBot.Attributes.Discord.Commands
 {
     public class RequireDeveloper : PreconditionAttribute
     {
-        private static IEnumerable<IConfigurationSection> _developerIdsSection = null;
+        private static IEnumerable<IConfigurationSection> _developerIdsSection;
         public override string ErrorMessage { get; set; }
 
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
@@ -19,7 +19,7 @@ namespace MafiaDiscordBot.Attributes.Discord.Commands
                 .GetChildren();
 
             return Task.FromResult(
-                _developerIdsSection.Any(dev => ulong.TryParse(dev.Value, out ulong id) && id == context.User.Id)
+                _developerIdsSection.Any(dev => ulong.TryParse(dev.Value, out var id) && id == context.User.Id)
                     ? PreconditionResult
                         .FromSuccess()
                     : PreconditionResult.FromError(ErrorMessage ??

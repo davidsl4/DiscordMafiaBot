@@ -6,14 +6,15 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
 
 namespace MafiaDiscordBot.Services
 {
-    class LocalizationService
+    internal class LocalizationService
     {
-        class Language
+        private class Language
         {
             public string Flag { get; set; }
             public string Name { get; set; }
@@ -31,9 +32,9 @@ namespace MafiaDiscordBot.Services
 
         public async Task LoadAllAsync()
         {
-            HashSet<Task> tasks = new HashSet<Task>();
+            var tasks = new HashSet<Task>();
             var localizations = _localizationsSection.GetChildren();
-            DirectoryInfo executableDirectory = new DirectoryInfo(AppContext.BaseDirectory);
+            var executableDirectory = new DirectoryInfo(AppContext.BaseDirectory);
             foreach (var _localization in localizations)
             {
                 var localization = _localization;
@@ -55,7 +56,7 @@ namespace MafiaDiscordBot.Services
                     {
                         foreach (var file in executableDirectory.GetFiles(pattern.Value))
                         {
-                            JObject translations = JObject.Parse(await File.ReadAllTextAsync(file.FullName).ConfigureAwait(false));
+                            var translations = JObject.Parse(await File.ReadAllTextAsync(file.FullName).ConfigureAwait(false));
                             language ??= new Language
                             {
                                 Flag = flag,
@@ -65,8 +66,8 @@ namespace MafiaDiscordBot.Services
                             if (language.Translations == null)
                                 language.Translations = translations;
                             else
-                                foreach (var translation in translations)
-                                    language.Translations.Add(translation.Key, translation.Value);
+                                foreach (var (key, value) in translations)
+                                    language.Translations.Add(key, value);
                         }
                     }
 
@@ -82,6 +83,7 @@ namespace MafiaDiscordBot.Services
         }
 
         public string GetLocalizedString(string key) => _localizations.TryGetValue("_", out var lang) ? lang.Translations[key]?.Value<string>() : null;
+
         public string GetLocalizedString(string language, string key)
         {
             if (language != null && _localizations.TryGetValue(language, out var lang))
