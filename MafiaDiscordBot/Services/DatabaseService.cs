@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using MafiaDiscordBot.Attributes.Database;
@@ -157,6 +158,7 @@ namespace MafiaDiscordBot.Services
         private MySqlCommand GetExecute(Query query) =>
             new MySqlCommand(_compiler.Compile(query).ToString(), _connection);
 
+        [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
         public abstract class ContextBase
         {
             private readonly DatabaseService _service;
@@ -171,11 +173,11 @@ namespace MafiaDiscordBot.Services
                         $"{tableNameKey} table name is missing, no database service will be provided to this table");
             }
 
-            public abstract class Guilds : ContextBase
+            public class Guilds : ContextBase
             {
                 private readonly ConcurrentDictionary<ulong, Model.Guild> _guilds;
 
-                protected Guilds(DatabaseService service) : base(service, "guilds")
+                public Guilds(DatabaseService service) : base(service, "guilds")
                 {
                     _guilds = new ConcurrentDictionary<ulong, Model.Guild>();
                 }
