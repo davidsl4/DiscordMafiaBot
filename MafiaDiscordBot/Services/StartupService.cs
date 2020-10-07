@@ -2,11 +2,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.ComponentModel;
 using System.Threading.Tasks;
 using Discord;
 using Serilog;
-using System.IO;
 using System.Linq;
 using Serilog.Events;
 
