@@ -1,0 +1,9 @@
+﻿{
+    "COMMAND_DESCRIPTION_CREATE_GAME_LOBBY": "Create a new game lobby",
+    "COMMAND_DESCRIPTION_HELP": "Sends this help message",
+    "COMMAND_DESCRIPTION_JOIN_GAME_LOBBY": "Join an existing game lobby",
+
+    "HELP_COMMAND_TITLE": "Commands list",
+    "HELP_COMMAND_CATEGORY_GENERAL": "General",
+    "HELP_COMMAND_CATEGORY_GAME": "Game"
+}

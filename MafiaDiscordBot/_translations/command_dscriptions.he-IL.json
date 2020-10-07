@@ -1,0 +1,8 @@
+﻿{
+    "COMMAND_DESCRIPTION_CREATE_GAME_LOBBY": "יצירת לובי משחק חדש",
+    "COMMAND_DESCRIPTION_HELP": "שולח הודעת עזרה זו",
+    "COMMAND_DESCRIPTION_JOIN_GAME_LOBBY": "הצטרפות ללובי משחק קיים",
+    "HELP_COMMAND_TITLE": "רשימת פקודות",
+    "HELP_COMMAND_CATEGORY_GENERAL": "כללי",
+    "HELP_COMMAND_CATEGORY_GAME": "משחק"
+}

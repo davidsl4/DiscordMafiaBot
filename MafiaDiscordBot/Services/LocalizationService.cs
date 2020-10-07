@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MafiaDiscordBot.Services
@@ -32,6 +33,7 @@ namespace MafiaDiscordBot.Services
         {
             HashSet<Task> tasks = new HashSet<Task>();
             var localizations = _localizationsSection.GetChildren();
+            DirectoryInfo executableDirectory = new DirectoryInfo(AppContext.BaseDirectory);
             foreach (var _localization in localizations)
             {
                 var localization = _localization;
@@ -39,31 +41,40 @@ namespace MafiaDiscordBot.Services
                 {
                     string
                         flag = localization["flag"],
-                        name = localization["name"],
-                        file = localization["file"];
+                        name = localization["name"];
+                    var patterns = localization.GetSection("files")?.GetChildren();
 
-                    if (flag == null || name == null || file == null)
+                    if (flag == null || name == null || patterns == null)
                     {
                         Log.Error("Unable to load language from section {section}, one or more of the parameters are missing", localization.Key);
                         return;
                     }
 
-                    if (!File.Exists(file))
+                    Language language = null;
+                    foreach (var pattern in patterns)
                     {
-                        Log.Error("Unable to load language {language} from section {section}, file wasn't found", name, localization.Key);
-                        return;
+                        foreach (var file in executableDirectory.GetFiles(pattern.Value))
+                        {
+                            JObject translations = JObject.Parse(await File.ReadAllTextAsync(file.FullName).ConfigureAwait(false));
+                            language ??= new Language
+                            {
+                                Flag = flag,
+                                Name = name,
+                                Translations = null
+                            };
+                            if (language.Translations == null)
+                                language.Translations = translations;
+                            else
+                                foreach (var translation in translations)
+                                    language.Translations.Add(translation.Key, translation.Value);
+                        }
                     }
 
-                    JObject translations = JObject.Parse(await File.ReadAllTextAsync(file).ConfigureAwait(false));
-
-                    Language language = new Language
-                    {
-                        Flag = flag,
-                        Name = name,
-                        Translations = translations
-                    };
-
-                    _localizations.TryAdd(localization.Key, language);
+                    if (language != null)
+                        _localizations.TryAdd(localization.Key, language);
+                    else
+                        Log.Error("No translations added for language {language} ({language_key}) with the specified patterns",
+                            name, localization.Key);
                 }));
             }
 

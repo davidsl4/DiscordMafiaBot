@@ -1,0 +1,8 @@
+﻿{
+    "COMMAND_DESCRIPTION_CREATE_GAME_LOBBY": "Создать новое игровое лобби",
+    "COMMAND_DESCRIPTION_HELP": "Отправляет это сообщение справки",
+    "COMMAND_DESCRIPTION_JOIN_GAME_LOBBY": "Присоединиться к существующему игровому лобби",
+    "HELP_COMMAND_TITLE": "Список команд",
+    "HELP_COMMAND_CATEGORY_GENERAL": "Общее",
+    "HELP_COMMAND_CATEGORY_GAME": "Игра"
+}
