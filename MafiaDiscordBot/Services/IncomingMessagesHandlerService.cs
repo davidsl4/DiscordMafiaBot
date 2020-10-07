@@ -78,8 +78,13 @@ namespace MafiaDiscordBot.Services
             {
                 try
                 {
-                    int argPos = -1;
-                    if (sum.HasStringPrefix(_configuration["default_prefix"], ref argPos) ||
+                    var prefix = _configuration["default_prefix"];
+
+                    if (arg.Channel is ITextChannel guildTextChannel)
+                        prefix = (await _database.Guilds.GetGuild(guildTextChannel.Guild).ConfigureAwait(false))?.Prefix ?? prefix;
+                    
+                    var argPos = -1;
+                    if (sum.HasStringPrefix(prefix, ref argPos) ||
                         sum.HasMentionPrefix(_discord.CurrentUser, ref argPos))
                     {
                         var res = await HandleCommandAsync(sum, argPos);
@@ -115,6 +120,8 @@ namespace MafiaDiscordBot.Services
                         fileOutput.AppendLine($"{(isInner ? "Inner exception" : "Exception")} details: {exception.GetType().FullName}");
                         AppendTabs();
                         fileOutput.AppendLine($"\tMessage: {exception.Message}");
+                        AppendTabs();
+                        fileOutput.AppendLine($"\tStacktrace: {exception.StackTrace}");
                         if (exception.InnerException != null)
                             AppendException(exception.InnerException, level + 1, true);
                     }
