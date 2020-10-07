@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using MafiaDiscordBot.Attributes.Database;
 using Microsoft.Extensions.Configuration;
@@ -100,8 +102,8 @@ namespace MafiaDiscordBot.Services
                 {
                     if (!prop.CanWrite) continue;
                     var attributes = prop.GetCustomAttributes(false);
-                    if (attributes.Any(x => x is SqlIgnoreAttribute)) continue;
-                    var sqlColumnAttr = (SqlColumnAttribute) attributes.FirstOrDefault(x => x is SqlColumnAttribute);
+                    if (attributes.Any(x => x is IgnoreAttribute)) continue;
+                    var sqlColumnAttr = (ColumnAttribute) attributes.FirstOrDefault(x => x is ColumnAttribute);
                     var sqlName = sqlColumnAttr?.Name ?? prop.Name;
                     if (!HasColumn(reader, sqlName, out var ordinal)) continue;
                     var sqlConverterAttr =
@@ -151,12 +153,31 @@ namespace MafiaDiscordBot.Services
             }
         }
 
-        private static string GetSqlColumnName<T>(string propertyName) =>
-            (typeof(T).GetProperty(propertyName)?.GetCustomAttributes(typeof(SqlColumnAttribute), false)
-                .FirstOrDefault() as SqlColumnAttribute)?.Name ?? propertyName;
+        private string QuerySaveResult<T>(string tableName, T data) where T : class, Model.IDatabaseObject
+        {
+            var type = typeof(T);
+            Dictionary<string, object> dictionary = new Dictionary<string, object>();
+            foreach (PropertyInfo runtimeProperty in type.GetProperties())
+            {
+                if (runtimeProperty.GetCustomAttribute(typeof(IgnoreAttribute)) != null) continue;
+                var obj = runtimeProperty.GetValue(data);
+                var str = (runtimeProperty.GetCustomAttribute(typeof (ColumnAttribute)) is ColumnAttribute customAttribute ? customAttribute.Name : null) ?? runtimeProperty.Name;
+                if (runtimeProperty.GetCustomAttribute(typeof(SqlConverterAttribute)) is SqlConverterAttribute sqlConverterAttr)
+                    obj = sqlConverterAttr.Write(obj);
+                dictionary.Add(str, obj);
+            }
 
-        private MySqlCommand GetExecute(Query query) =>
-            new MySqlCommand(_compiler.Compile(query).ToString(), _connection);
+            return _compiler.Compile(new Query(tableName)
+                .AsInsert(dictionary)) + " ON DUPLICATE KEY SET " + string.Join(",",
+                dictionary.Select(kvp => $"{kvp.Key}={kvp.Value}").ToArray());
+        }
+
+        private static string GetSqlColumnName<T>(string propertyName) =>
+            (typeof(T).GetProperty(propertyName)?.GetCustomAttributes(typeof(ColumnAttribute), false)
+                .FirstOrDefault() as ColumnAttribute)?.Name ?? propertyName;
+
+        private MySqlCommand GetExecute(Query query) => new MySqlCommand(_compiler.Compile(query).ToString(), _connection);
+        private MySqlCommand GetExecute(string query) => new MySqlCommand(query, _connection);
 
         [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
         public abstract class ContextBase
@@ -200,6 +221,12 @@ namespace MafiaDiscordBot.Services
 
                 public Task<Model.Guild> GetGuild(Discord.IGuild guild) => GetGuild(guild.Id);
                 public Task<Model.Guild> GetGuild(Discord.IGuildChannel guildChannel) => GetGuild(guildChannel.Guild);
+
+                public async Task SaveGuild(Model.Guild guild)
+                {
+                   await _service.GetExecute(_service.QuerySaveResult(_tableName, guild)).ExecuteNonQueryAsync().ConfigureAwait(false);
+                   guild.LastModified = null;
+                }
 
                 public void ClearCachedData() => _guilds.Clear();
             }

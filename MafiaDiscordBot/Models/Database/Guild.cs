@@ -1,5 +1,5 @@
 ﻿using System;
-using MafiaDiscordBot.Attributes.Database;
+using SqlKata;
 
 namespace MafiaDiscordBot.Models.Database
 {
@@ -10,7 +10,7 @@ namespace MafiaDiscordBot.Models.Database
         private string _prefix;
         private string _localization;
 
-        [SqlColumn("id")]
+        [Column("id")]
         public ulong ID
         {
             get
@@ -26,7 +26,7 @@ namespace MafiaDiscordBot.Models.Database
             }
         }
 
-        [SqlColumn("game_category")]
+        [Column("game_category")]
         public ulong GameCategoryId
         {
             get
@@ -42,7 +42,7 @@ namespace MafiaDiscordBot.Models.Database
             }
         }
 
-        [SqlColumn("prefix")]
+        [Column("prefix")]
         public string Prefix
         {
             get
@@ -58,7 +58,7 @@ namespace MafiaDiscordBot.Models.Database
             }
         }
 
-        [SqlColumn("localization")]
+        [Column("localization")]
         public string Localization
         {
             get
