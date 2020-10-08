@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using MafiaDiscordBot.Extensions;
 using MafiaDiscordBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +49,7 @@ namespace MafiaDiscordBot.Modules
             var builder = new EmbedBuilder()
                 .WithCurrentTimestamp()
                 .WithAuthor(_localization.GetLocalizedString(dbGuild, "HELP_COMMAND_TITLE"),
-                    Context.Client.CurrentUser.GetAvatarUrl() ?? Context.Client.CurrentUser.GetDefaultAvatarUrl())
+                    Context.Client.CurrentUser.FixGetAvatarUrl())
                 .WithColor(uint.Parse(_config["color"]))
                 .AddField(_localization.GetLocalizedString(dbGuild, "HELP_COMMAND_CATEGORY_GENERAL"),
                     GetCommandsCategoryFieldText(

@@ -50,7 +50,7 @@ namespace MafiaDiscordBot.Modules
                 {
                     author
                         .WithName($"Requested by {Context.User}")
-                        .WithIconUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl());
+                        .WithIconUrl(Context.User.FixGetAvatarUrl());
                 })
                 .AddInlineField("Bot Version", AssemblyInfo.BOT_VERSION)
                 .AddInlineField("Features (Check documentation)", ((Func<string>) (() =>
