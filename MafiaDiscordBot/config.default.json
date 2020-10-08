@@ -12,7 +12,9 @@
     "_": {
       "flag": ":flag_us:", // A flag for the language
       "name": "English", // The name of the language
-      "file": "translations/en.json"
+      "files": [
+        "translations/*.en-US.json"
+      ]
     }
   },
   "database": {
