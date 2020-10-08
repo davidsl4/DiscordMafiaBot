@@ -174,7 +174,7 @@ namespace MafiaDiscordBot.Services
             // ReSharper disable once VariableHidesOuterVariable
             SqlResult CompileUpdateQuery(Query query)
             {
-                var ctx = new SqlResult()
+                var ctx = new SqlResult
                 {
                     Query = query
                 };
