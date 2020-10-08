@@ -57,6 +57,7 @@ namespace MafiaDiscordBot
                 .AddSingleton<LocalizationService>()
                 .AddSingleton<SerialKeyValidatorService>()
                 .AddSingleton<SystemMetricsService>()
+                .AddSingleton<Random>()
                 
                 // build the service collection
                 .BuildServiceProvider();

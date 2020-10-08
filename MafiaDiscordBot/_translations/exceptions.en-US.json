@@ -1,4 +1,12 @@
 ﻿{
     "MESSAGE_PROCESS_EXCEPTION_TITLE": "Probably it's our fault, not yours",
-    "MESSAGE_PROCESS_EXCEPTION_DESCRIPTION": "Something went wrong on our land.\nDon't worry, we already working to fix this terrible issue."
+    "MESSAGE_PROCESS_EXCEPTION_DESCRIPTION": "Something went wrong on our land.\nDon't worry, we already working to fix this terrible issue.",
+    "GUILD_NOT_CONFIGURED_EXCEPTION": "This server isn't configured yet, ask an administrator to configure it and try again.",
+    
+    "BOT_PERMISSIONS_EXCEPTION_TITLE": "Whoops, seems like I don't have enough permissions",
+    "BOT_PERMISSIONS_EXCEPTION_BODY": "In order to do this I need the following permissions:\n{permissions}",
+    "BOT_PERMISSIONS_EXCEPTION_BODY_VAR:embed_links": "Embed Links",
+
+    "INVALID_COMMAND_USAGE_MISSING_ARG_EXCEPTION_TITLE": "Probably you've forgot one or more arguments..",
+    "INVALID_COMMAND_USAGE_MISSING_ARG_EXCEPTION_BODY": "Usage: {hint}"
 }
